@@ -39,7 +39,7 @@ def _replace_copyright_text(file_path):
     with open(file_path, 'rt', encoding="utf8") as f:
         for line in f:
             if line.startswith('#'):
-                if 'copyright' in line.lower():
+                if 'copyright' in line.lower() and 'IBM' in line:
                     is_copyright = True
             else:
                 if is_copyright:
@@ -50,25 +50,40 @@ def _replace_copyright_text(file_path):
             if not is_copyright:
                 new_contents += line
 
+    # file finished without replacing copyright
+    if is_copyright and not copyright_replaced:
+        new_contents += '\n'.join(_NEW_COPYRIGHT_TEXT) + '\n'
+        copyright_replaced = True
+        is_copyright = False
+
+    file_changed = False
     if copyright_replaced and len(new_contents) > 0:
         with open(file_path, 'w') as f:
             f.write(new_contents)
+            print(file_path)
+            file_changed = True
+
+    return file_changed
 
 
 def _change_copyright(dir_path):
+    files_changed = 0
     for item in os.listdir(dir_path):
         fullpath = os.path.join(dir_path, item)
         if os.path.isdir(fullpath):
-            _change_copyright(fullpath)
+            files_changed += _change_copyright(fullpath)
             continue
 
         if os.path.isfile(fullpath):
             try:
-                _replace_copyright_text(fullpath)
+                if _replace_copyright_text(fullpath):
+                    files_changed += 1
             except UnicodeDecodeError:
                 pass
             except Exception as e:
                 print("{} error: {}".format(fullpath, str(e)))
+
+    return files_changed
 
 
 if __name__ == '__main__':
@@ -79,4 +94,5 @@ if __name__ == '__main__':
 
     args = parser.parse_args()
 
-    _change_copyright(args.path)
+    files_changed = _change_copyright(args.path)
+    print("{} files changed.".format(files_changed))
