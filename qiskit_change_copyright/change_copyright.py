@@ -72,7 +72,7 @@ def _change_copyright(dir_path):
 
 
 if __name__ == '__main__':
-    parser = argparse.ArgumentParser(description='Qiskit Chage Copyright Tool')
+    parser = argparse.ArgumentParser(description='Qiskit Change Copyright Tool')
     parser.add_argument('path',
                         metavar='path',
                         help='Root path of project to change in place.')
