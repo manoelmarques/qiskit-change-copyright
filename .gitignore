@@ -1,3 +1,15 @@
+# MacOSX
+.DS_Store
+
+# Dolphin KDE
+.directory
+
+# editor files
+.vscode/
+.idea/
+
+# Standard python ignores follow
+
 # Byte-compiled / optimized / DLL files
 __pycache__/
 *.py[cod]
@@ -5,17 +17,18 @@ __pycache__/
 
 # C extensions
 *.so
+*.so.dSYM
+*.dll
 
 # Distribution / packaging
 .Python
+env/
 build/
 develop-eggs/
 dist/
 downloads/
 eggs/
 .eggs/
-lib/
-lib64/
 parts/
 sdist/
 var/
@@ -24,6 +37,8 @@ wheels/
 .installed.cfg
 *.egg
 MANIFEST
+install/
+nlopt/
 
 # PyInstaller
 #  Usually these files are written by a python script from a template
@@ -43,9 +58,12 @@ htmlcov/
 .cache
 nosetests.xml
 coverage.xml
-*.cover
+*,cover
 .hypothesis/
 .pytest_cache/
+test/*.log
+test/*.pdf
+test/*.prof
 
 # Translations
 *.mo
@@ -53,8 +71,9 @@ coverage.xml
 
 # Django stuff:
 *.log
+.static_storage/
+.media/
 local_settings.py
-db.sqlite3
 
 # Flask stuff:
 instance/
