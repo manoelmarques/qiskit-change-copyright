@@ -46,9 +46,16 @@ class ChangeDate(object):
                                       stdin=subprocess.DEVNULL,
                                       stdout=subprocess.PIPE,
                                       stderr=subprocess.PIPE)
-            cmd2 = ['head',
+            cmd2 = ['tail',
                     '-1']
             popen2 = subprocess.Popen(cmd2,
+                                      stdin=popen1.stdout,
+                                      stdout=subprocess.PIPE,
+                                      stderr=subprocess.PIPE)
+
+            cmd3 = ['head',
+                    '-1']
+            popen3 = subprocess.Popen(cmd3,
                                       stdin=popen1.stdout,
                                       stdout=subprocess.PIPE,
                                       stderr=subprocess.PIPE)
@@ -59,15 +66,33 @@ class ChangeDate(object):
                 print("'{}' Error: '{}'".format(file_path, err_msg))
                 return None
 
-            date = out.decode('utf-8').strip()
-            if len(date) == 0 or len(date) < 4:
+            start_date = out.decode('utf-8').strip()
+            if len(start_date) == 0 or len(start_date) < 4:
                 print(file)
-                print("'{}' Error: 'No Date returned'".format(file_path))
+                print("'{}' Error: 'No Start Date returned'".format(file_path))
                 return None
+
+            start_date = start_date[:4]
+
+            out, err = popen3.communicate()
+            err_msg = err.decode('utf-8').strip()
+            if len(err_msg) > 0:
+                print("'{}' Error: '{}'".format(file_path, err_msg))
+                return None
+
+            end_date = out.decode('utf-8').strip()
+            if len(end_date) == 0 or len(end_date) < 4:
+                end_date = None
+            else:
+                end_date = end_date[:4]
+
+            if start_date == end_date:
+                end_date = None
 
             popen1.wait()
             popen2.wait()
-            return date[:4]
+            popen3.wait()
+            return (start_date, end_date)
         except Exception as e:
             print('Process has failed: {}'.format(ChangeDate.exception_to_string(e)))
 
@@ -79,9 +104,13 @@ class ChangeDate(object):
         with open(file_path, 'rt', encoding="utf8") as f:
             for line in f:
                 if line.startswith('# (C) Copyright IBM Corp. '):
-                    year = self.get_file_year(file_path)
-                    if year is not None:
-                        new_line = "# (C) Copyright IBM 2017, {}.\n".format(year)
+                    start_year, end_year = self.get_file_year(file_path)
+                    if start_year is not None:
+                        if end_year is not None:
+                            new_line = "# (C) Copyright IBM {}, {}.\n".format(start_year, end_year)
+                        else:
+                            new_line = "# (C) Copyright IBM {}.\n".format(start_year)
+
                         date_replaced = True
                         new_contents += new_line
                 else:
