@@ -15,8 +15,6 @@
 import os
 import argparse
 
-_INIT_FILE = "__init__.py"
-
 _NEW_COPYRIGHT_TEXT = [
     '# This code is part of Qiskit.',
     '#',
