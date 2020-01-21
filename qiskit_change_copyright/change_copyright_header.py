@@ -12,6 +12,7 @@
 # copyright notice, and modified files need to carry a notice indicating
 # that they have been altered from the originals.
 
+""" Change Copyright header """
 import os
 import argparse
 
@@ -34,8 +35,8 @@ def _replace_copyright_text(file_path):
     copyright_replaced = False
     is_copyright = False
     new_contents = ''
-    with open(file_path, 'rt', encoding="utf8") as f:
-        for line in f:
+    with open(file_path, 'rt', encoding="utf8") as file:
+        for line in file:
             if line.startswith('#'):
                 if 'copyright' in line.lower() and 'IBM' in line:
                     is_copyright = True
@@ -56,8 +57,8 @@ def _replace_copyright_text(file_path):
 
     file_changed = False
     if copyright_replaced and len(new_contents) > 0:
-        with open(file_path, 'w') as f:
-            f.write(new_contents)
+        with open(file_path, 'w') as file:
+            file.write(new_contents)
             print(file_path)
             file_changed = True
 
@@ -65,32 +66,32 @@ def _replace_copyright_text(file_path):
 
 
 def _change_copyright(dir_path):
-    files_changed = 0
+    _files_changed = 0
     for item in os.listdir(dir_path):
         fullpath = os.path.join(dir_path, item)
         if os.path.isdir(fullpath):
-            files_changed += _change_copyright(fullpath)
+            _files_changed += _change_copyright(fullpath)
             continue
 
         if os.path.isfile(fullpath):
             try:
                 if _replace_copyright_text(fullpath):
-                    files_changed += 1
+                    _files_changed += 1
             except UnicodeDecodeError:
                 pass
-            except Exception as e:
-                print("{} error: {}".format(fullpath, str(e)))
+            except Exception as ex:  # pylint: disable=broad-except
+                print("{} error: {}".format(fullpath, str(ex)))
 
-    return files_changed
+    return _files_changed
 
 
 if __name__ == '__main__':
-    parser = argparse.ArgumentParser(description='Qiskit Change Copyright Tool')
-    parser.add_argument('path',
+    PARSER = argparse.ArgumentParser(description='Qiskit Change Copyright Tool')
+    PARSER.add_argument('path',
                         metavar='path',
                         help='Root path of project to change in place.')
 
-    args = parser.parse_args()
+    ARGS = PARSER.parse_args()
 
-    files_changed = _change_copyright(args.path)
-    print("{} files changed.".format(files_changed))
+    CHANGED = _change_copyright(ARGS.path)
+    print("{} files changed.".format(CHANGED))
