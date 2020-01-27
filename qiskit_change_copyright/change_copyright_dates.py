@@ -14,6 +14,7 @@
 
 """ Change copyright date """
 import os
+import datetime
 import argparse
 import subprocess
 import traceback
@@ -36,7 +37,7 @@ class ChangeDate:
         if not date or len(date) < 4:
             return None
 
-        return date[:4]
+        return int(date[:4])
 
     @staticmethod
     def _format_output(out, err):
@@ -75,22 +76,9 @@ class ChangeDate:
 
         return ChangeDate._format_output(out, err)
 
-    def _get_file_start_last_years(self, file_path):
-        start_year = None
+    def _get_file_last_year(self, file_path):
         last_year = None
         errors = []
-
-        try:
-            start_year, err = self._process_file_year(file_path, True, True)
-            if err:
-                errors.append(err)
-            elif start_year is None:
-                start_year, err = self._process_file_year(file_path, True, False)
-                if err:
-                    errors.append(err)
-        except Exception as ex:  # pylint: disable=broad-except
-            errors.append("'{}' First year: {}".format(file_path, str(ex)))
-
         try:
             last_year, err = self._process_file_year(file_path, False, True)
             if err:
@@ -105,42 +93,55 @@ class ChangeDate:
         if errors:
             raise ValueError(' - '.join(errors))
 
-        return start_year, last_year
+        return last_year
 
     def replace_copyright_date(self, file_path):
         """ replace copyright dates if modified for a file """
+        now = datetime.datetime.now()
         date_replaced = False
         new_contents = ''
         try:
             with open(file_path, 'rt', encoding="utf8") as file:
                 for line in file:
-                    if line.startswith('# (C) Copyright IBM '):
-                        start_year, end_year = self._get_file_start_last_years(file_path)
-                        new_line = '# (C) Copyright IBM {}'.format(start_year)
-                        if start_year != end_year:
-                            new_line += ', {}'.format(end_year)
-
-                        new_line += '.\n'
-                        if line != new_line:
-                            print(file_path, line[:-1], new_line[:-1])
-                        if start_year is not None:
-                            if start_year == end_year:
-                                new_line = "# (C) Copyright IBM {}.\n".format(start_year)
-                            else:
-                                new_line = \
-                                    "# (C) Copyright IBM {}, {}.\n".format(start_year, end_year)
-
-                            date_replaced = True
-                            new_contents += new_line
-                    else:
+                    if not line.startswith('# (C) Copyright IBM '):
                         new_contents += line
+                        continue
+
+                    curr_years = []
+                    for word in line.strip().split():
+                        for year in word.strip().split(','):
+                            if year.startswith('20') and len(year) >= 4:
+                                try:
+                                    curr_years.append(int(year[0:4]))
+                                except ValueError:
+                                    pass
+
+                    header_start_year = None
+                    header_last_year = None
+                    if len(curr_years) > 1:
+                        header_start_year = curr_years[0]
+                        header_last_year = curr_years[1]
+                    elif len(curr_years) == 1:
+                        header_start_year = header_last_year = curr_years[0]
+
+                    last_year = self._get_file_last_year(file_path)
+                    if header_last_year != last_year:
+                        new_line = '# (C) Copyright IBM '
+                        if header_start_year and header_start_year != last_year:
+                            new_line += '{}, '.format(header_start_year)
+
+                        new_line += '{}.\n'.format(now.year)
+                        print(file_path, line[:-1], new_line[:-1])
+
+                        date_replaced = True
+                        new_contents += new_line
+
         except UnicodeDecodeError:
             pass
-            # print('File ignored: {}.'.format(file_path))
 
         file_changed = False
         if date_replaced and len(new_contents) > 0:
-            pass
+            file_changed = True
         #   with open(file_path, 'w') as f:
         #        f.write(new_contents)
         #        file_changed = True
