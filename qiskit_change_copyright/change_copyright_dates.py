@@ -127,7 +127,7 @@ class ChangeDate:
                         header_start_year = header_last_year = curr_years[0]
 
                     last_year = self._get_file_last_year(file_path)
-                    if header_last_year != last_year:
+                    if last_year and header_last_year != last_year:
                         new_line = '# (C) Copyright IBM '
                         if header_start_year and header_start_year != last_year:
                             new_line += '{}, '.format(header_start_year)
