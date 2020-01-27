@@ -100,6 +100,7 @@ class ChangeDate:
         now = datetime.datetime.now()
         date_replaced = False
         new_contents = ''
+        has_header = False
         try:
             with open(file_path, 'rt', encoding="utf8") as file:
                 for line in file:
@@ -107,6 +108,7 @@ class ChangeDate:
                         new_contents += line
                         continue
 
+                    has_header = True
                     curr_years = []
                     for word in line.strip().split():
                         for year in word.strip().split(','):
@@ -137,32 +139,36 @@ class ChangeDate:
                         new_contents += new_line
 
         except UnicodeDecodeError:
-            pass
+            return False, False
 
-        file_changed = False
-        if date_replaced and len(new_contents) > 0:
-            file_changed = True
-        #   with open(file_path, 'w') as f:
-        #        f.write(new_contents)
-        #        file_changed = True
+        if date_replaced and new_contents:
+            with open(file_path, 'w') as file:
+                file.write(new_contents)
+                return True, has_header
 
-        return file_changed
+        return False, has_header
 
     def change_dates(self, dir_path):
         """ change copyright dates if changed """
         files_changed = 0
+        files_with_header = 0
         for item in os.listdir(dir_path):
             fullpath = os.path.join(dir_path, item)
             if os.path.isdir(fullpath):
                 if not item.startswith('.git'):
-                    files_changed += self.change_dates(fullpath)
+                    files = self.change_dates(fullpath)
+                    files_changed += files[0]
+                    files_with_header += files[1]
                 continue
 
             if os.path.isfile(fullpath):
-                if self.replace_copyright_date(fullpath):
+                file_changed, file_has_header = self.replace_copyright_date(fullpath)
+                if file_changed:
                     files_changed += 1
+                if file_has_header:
+                    files_with_header += 1
 
-        return files_changed
+        return files_changed, files_with_header
 
 
 if __name__ == '__main__':
@@ -173,5 +179,5 @@ if __name__ == '__main__':
 
     ARGS = PARSER.parse_args()
 
-    CHANGED = ChangeDate(ARGS.path).change_dates(ARGS.path)
-    print("{} files changed.".format(CHANGED))
+    CHANGED, HAS_HEADER = ChangeDate(ARGS.path).change_dates(ARGS.path)
+    print("{} of {} files with copyright header changed.".format(CHANGED, HAS_HEADER))
